@@ -2,6 +2,7 @@ import { StyleSheet, Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useTabs } from '@/hooks/use-tabs-context';
 import { Colors } from '@/constants/theme';
 import * as Haptics from 'expo-haptics';
 
@@ -15,13 +16,21 @@ export default function SearchResult({ title, url, extract }: SearchResultProps)
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const router = useRouter();
+  const { createTab, tabs } = useTabs();
 
   const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.push({
-      pathname: '/browser',
-      params: { url, title },
-    });
+    
+    // If no tabs exist, create first tab, otherwise navigate to existing browser
+    if (tabs.length === 0) {
+      router.push({
+        pathname: '/browser',
+        params: { url, title },
+      });
+    } else {
+      createTab(url, title);
+      router.push('/browser');
+    }
   };
 
   // Extract domain from URL

@@ -1,51 +1,24 @@
 import { DarkTheme, DefaultTheme, ThemeProvider as NavigationThemeProvider } from '@react-navigation/native';
-import { Drawer } from 'expo-router/drawer';
+import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
 
 import { ThemeProvider } from '@/hooks/use-theme-context';
 import { AuthProvider } from '@/hooks/use-auth-context';
+import { TabsProvider } from '@/hooks/use-tabs-context';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import CustomDrawer from '@/components/CustomDrawer';
 
 function RootNavigator() {
   const colorScheme = useColorScheme();
 
   return (
     <NavigationThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Drawer
-        drawerContent={(props) => <CustomDrawer {...props} />}
-        screenOptions={{
-          headerShown: false,
-          drawerType: 'front',
-          swipeEdgeWidth: 50,
-        }}
-      >
-        <Drawer.Screen
-          name="index"
-          options={{
-            drawerLabel: 'Search',
-            title: 'Search',
-          }}
-        />
-        <Drawer.Screen
-          name="login"
-          options={{
-            drawerLabel: 'Login',
-            title: 'Login',
-            drawerItemStyle: { display: 'none' },
-          }}
-        />
-        <Drawer.Screen
-          name="browser"
-          options={{
-            drawerLabel: 'Browser',
-            title: 'Browser',
-            drawerItemStyle: { display: 'none' },
-          }}
-        />
-      </Drawer>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="index" />
+        <Stack.Screen name="login" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="browser" options={{ presentation: 'modal' }} />
+      </Stack>
       <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
     </NavigationThemeProvider>
   );
@@ -56,7 +29,9 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider>
         <AuthProvider>
-          <RootNavigator />
+          <TabsProvider>
+            <RootNavigator />
+          </TabsProvider>
         </AuthProvider>
       </ThemeProvider>
     </GestureHandlerRootView>
