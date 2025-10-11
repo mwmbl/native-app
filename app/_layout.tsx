@@ -5,6 +5,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
 
 import { ThemeProvider } from '@/hooks/use-theme-context';
+import { AuthProvider } from '@/hooks/use-auth-context';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import CustomDrawer from '@/components/CustomDrawer';
 
@@ -28,6 +29,14 @@ function RootNavigator() {
             title: 'Search',
           }}
         />
+        <Drawer.Screen
+          name="login"
+          options={{
+            drawerLabel: 'Login',
+            title: 'Login',
+            drawerItemStyle: { display: 'none' },
+          }}
+        />
       </Drawer>
       <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
     </NavigationThemeProvider>
@@ -38,7 +47,9 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider>
-        <RootNavigator />
+        <AuthProvider>
+          <RootNavigator />
+        </AuthProvider>
       </ThemeProvider>
     </GestureHandlerRootView>
   );

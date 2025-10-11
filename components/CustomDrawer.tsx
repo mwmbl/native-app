@@ -1,16 +1,20 @@
-import { StyleSheet, View, Pressable } from 'react-native';
+import { StyleSheet, View, Pressable, ActivityIndicator } from 'react-native';
 import { DrawerContentScrollView, DrawerContentComponentProps } from '@react-navigation/drawer';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useTheme } from '@/hooks/use-theme-context';
+import { useAuth } from '@/hooks/use-auth-context';
 import { Colors } from '@/constants/theme';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 
 export default function CustomDrawer(props: DrawerContentComponentProps) {
   const { colorScheme, themeMode, setThemeMode } = useTheme();
+  const { isAuthenticated, username, logout, isLoading } = useAuth();
   const colors = Colors[colorScheme];
+  const router = useRouter();
 
   const handleThemeToggle = (mode: 'light' | 'dark' | 'system') => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -19,8 +23,14 @@ export default function CustomDrawer(props: DrawerContentComponentProps) {
 
   const handleLogin = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // TODO: Implement login functionality
-    console.log('Login pressed');
+    props.navigation.closeDrawer();
+    router.push('/login');
+  };
+
+  const handleLogout = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    await logout();
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   };
 
   return (
@@ -41,20 +51,52 @@ export default function CustomDrawer(props: DrawerContentComponentProps) {
 
       {/* Menu Items */}
       <View style={styles.menuItems}>
-        {/* Login Option */}
-        <Pressable
-          onPress={handleLogin}
-          style={({ pressed }) => [
-            styles.menuItem,
-            {
-              backgroundColor: colorScheme === 'dark' ? '#2C2C2E' : '#F2F2F7',
-              opacity: pressed ? 0.7 : 1,
-            },
-          ]}
-        >
-          <Ionicons name="person-outline" size={24} color={colors.text} />
-          <ThemedText style={styles.menuItemText}>Login</ThemedText>
-        </Pressable>
+        {/* User Info / Login/Logout */}
+        {isLoading ? (
+          <View style={[styles.menuItem, { backgroundColor: colorScheme === 'dark' ? '#2C2C2E' : '#F2F2F7' }]}>
+            <ActivityIndicator size="small" color={colors.tint} />
+            <ThemedText style={styles.menuItemText}>Loading...</ThemedText>
+          </View>
+        ) : isAuthenticated ? (
+          <>
+            {/* User Info */}
+            <View style={[styles.menuItem, { backgroundColor: colorScheme === 'dark' ? '#2C2C2E' : '#F2F2F7' }]}>
+              <Ionicons name="person" size={24} color={colors.tint} />
+              <ThemedText style={[styles.menuItemText, { color: colors.tint, fontWeight: '600' }]}>
+                {username}
+              </ThemedText>
+            </View>
+            {/* Logout Button */}
+            <Pressable
+              onPress={handleLogout}
+              style={({ pressed }) => [
+                styles.menuItem,
+                {
+                  backgroundColor: colorScheme === 'dark' ? '#2C2C2E' : '#F2F2F7',
+                  opacity: pressed ? 0.7 : 1,
+                },
+              ]}
+            >
+              <Ionicons name="log-out-outline" size={24} color={colors.text} />
+              <ThemedText style={styles.menuItemText}>Logout</ThemedText>
+            </Pressable>
+          </>
+        ) : (
+          /* Login Button */
+          <Pressable
+            onPress={handleLogin}
+            style={({ pressed }) => [
+              styles.menuItem,
+              {
+                backgroundColor: colorScheme === 'dark' ? '#2C2C2E' : '#F2F2F7',
+                opacity: pressed ? 0.7 : 1,
+              },
+            ]}
+          >
+            <Ionicons name="log-in-outline" size={24} color={colors.text} />
+            <ThemedText style={styles.menuItemText}>Login</ThemedText>
+          </Pressable>
+        )}
 
         {/* Theme Section */}
         <View style={styles.section}>
