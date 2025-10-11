@@ -1,9 +1,9 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { StyleSheet, View, FlatList, KeyboardAvoidingView, Platform, Pressable, ScrollView, Modal, TextInput, ActivityIndicator } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
 import SearchResult from '@/components/SearchResult';
@@ -11,6 +11,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useAuth } from '@/hooks/use-auth-context';
 import { useTheme } from '@/hooks/use-theme-context';
 import { useTabs } from '@/hooks/use-tabs-context';
+import { useFavorites } from '@/hooks/use-favorites-context';
 import { Colors } from '@/constants/theme';
 import * as Haptics from 'expo-haptics';
 
@@ -25,13 +26,25 @@ export default function SearchScreen() {
   const colors = Colors[colorScheme ?? 'light'];
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { tabs, switchTab, closeTab } = useTabs();
+  const { tabs, switchTab, closeTab, createTab } = useTabs();
+  const { favorites, removeFavorite } = useFavorites();
   const { isAuthenticated, username, logout } = useAuth();
   const { themeMode, setThemeMode } = useTheme();
   const [searchQuery, setSearchQuery] = useState('');
   const [results, setResults] = useState<SearchResultType[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const scrollViewRef = useRef<ScrollView>(null);
+
+  // Clear search when screen comes into focus and tabs exist
+  useFocusEffect(
+    useCallback(() => {
+      if (tabs.length > 0) {
+        setSearchQuery('');
+        setResults([]);
+      }
+    }, [tabs.length])
+  );
 
   const handleOpenTab = (tabId: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -43,6 +56,26 @@ export default function SearchScreen() {
     e?.stopPropagation();
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     closeTab(tabId);
+  };
+
+  const handleOpenFavorite = (url: string, title: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (tabs.length === 0) {
+      router.push({
+        pathname: '/browser',
+        params: { url, title },
+      });
+    } else {
+      // Add as new tab
+      createTab(url, title);
+      router.push('/browser');
+    }
+  };
+
+  const handleRemoveFavorite = (id: string, e?: any) => {
+    e?.stopPropagation();
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    removeFavorite(id);
   };
 
   const getDomain = (url: string) => {
@@ -106,6 +139,15 @@ export default function SearchScreen() {
     setThemeMode(mode);
   };
 
+  const handleShowTabsAndFavorites = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    // Clear search to show favorites and tabs
+    setSearchQuery('');
+    setResults([]);
+    // Scroll to top
+    scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
       <KeyboardAvoidingView 
@@ -115,6 +157,7 @@ export default function SearchScreen() {
       >
         {results.length === 0 ? (
           <ScrollView 
+            ref={scrollViewRef}
             style={styles.scrollView}
             contentContainerStyle={styles.centeredContent}
             showsVerticalScrollIndicator={false}
@@ -128,14 +171,63 @@ export default function SearchScreen() {
               <ThemedText type="title" style={styles.title}>mwmbl</ThemedText>
             </ThemedView>
 
-            {/* Open Tabs Section */}
-            {tabs.length > 0 && !searchQuery.trim() && (
-              <View style={styles.tabsSection}>
-                <ThemedText style={styles.tabsSectionTitle}>Open Tabs</ThemedText>
+            {/* Favorites Section */}
+            {favorites.length > 0 && !searchQuery.trim() && (
+              <View style={styles.section}>
+                <ThemedText style={styles.sectionTitle}>Favorites</ThemedText>
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.tabsScroll}
+                  contentContainerStyle={styles.scrollContent}
+                >
+                  {favorites.map((favorite) => (
+                    <Pressable
+                      key={favorite.id}
+                      onPress={() => handleOpenFavorite(favorite.url, favorite.title)}
+                      style={({ pressed }) => [
+                        styles.favoriteCard,
+                        {
+                          backgroundColor: colorScheme === 'dark' ? '#2C2C2E' : '#F2F2F7',
+                          opacity: pressed ? 0.7 : 1,
+                        },
+                      ]}
+                    >
+                      <View style={styles.favoriteCardHeader}>
+                        <View style={[styles.favoriteIcon, { backgroundColor: colors.tint }]}>
+                          <ThemedText style={styles.favoriteIconText}>
+                            {favorite.domain.charAt(0).toUpperCase()}
+                          </ThemedText>
+                        </View>
+                        <Pressable
+                          onPress={(e) => handleRemoveFavorite(favorite.id, e)}
+                          style={({ pressed }) => [
+                            styles.removeButton,
+                            { opacity: pressed ? 0.5 : 1 },
+                          ]}
+                        >
+                          <Ionicons name="close-circle" size={20} color={colors.icon} />
+                        </Pressable>
+                      </View>
+                      <ThemedText numberOfLines={2} style={styles.favoriteTitle}>
+                        {favorite.title || favorite.domain}
+                      </ThemedText>
+                      <ThemedText numberOfLines={1} style={styles.favoriteDomain}>
+                        {favorite.domain}
+                      </ThemedText>
+                    </Pressable>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+
+            {/* Open Tabs Section */}
+            {tabs.length > 0 && !searchQuery.trim() && (
+              <View style={styles.section}>
+                <ThemedText style={styles.sectionTitle}>Open Tabs</ThemedText>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.scrollContent}
                 >
                   {tabs.map((tab) => (
                     <Pressable
@@ -247,9 +339,9 @@ export default function SearchScreen() {
             ) : null}
           </View>
 
-          {tabs.length > 0 && (
+          {(tabs.length > 0 || favorites.length > 0) && (
             <Pressable
-              onPress={() => handleOpenTab(tabs[tabs.length - 1].id)}
+              onPress={handleShowTabsAndFavorites}
               style={({ pressed }) => [
                 styles.tabCountButton,
                 {
@@ -258,7 +350,7 @@ export default function SearchScreen() {
                 },
               ]}
             >
-              <ThemedText style={styles.tabCountText}>{tabs.length}</ThemedText>
+              <Ionicons name="albums-outline" size={18} color={colors.text} />
             </Pressable>
           )}
         </View>
@@ -408,18 +500,54 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: 'bold',
   },
-  tabsSection: {
+  section: {
     marginTop: 24,
     paddingHorizontal: 16,
   },
-  tabsSectionTitle: {
+  sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
     marginBottom: 12,
   },
-  tabsScroll: {
+  scrollContent: {
     gap: 12,
     paddingRight: 16,
+  },
+  favoriteCard: {
+    width: 140,
+    height: 140,
+    borderRadius: 12,
+    padding: 12,
+  },
+  favoriteCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  favoriteIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  favoriteIconText: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  removeButton: {
+    padding: 4,
+  },
+  favoriteTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  favoriteDomain: {
+    fontSize: 12,
+    opacity: 0.6,
   },
   tabCard: {
     width: 200,

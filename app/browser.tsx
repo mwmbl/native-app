@@ -4,9 +4,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useLocalSearchParams, useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ThemedText } from '@/components/themed-text';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useTabs } from '@/hooks/use-tabs-context';
+import { useFavorites } from '@/hooks/use-favorites-context';
 import { Colors } from '@/constants/theme';
 import * as Haptics from 'expo-haptics';
 
@@ -19,6 +21,7 @@ export default function BrowserScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { tabs, activeTab, createTab, closeTab, switchTab, updateTab, closeAllTabs } = useTabs();
+  const { addFavorite, removeFavorite, isFavorite } = useFavorites();
 
   const url = typeof params.url === 'string' ? params.url : '';
   const title = typeof params.title === 'string' ? params.title : '';
@@ -76,6 +79,27 @@ export default function BrowserScreen() {
         });
       } catch (error) {
         console.error('Error sharing:', error);
+      }
+    }
+  };
+
+  const handleToggleFavorite = async () => {
+    if (activeTab) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      if (isFavorite(activeTab.url)) {
+        // Find and remove the favorite
+        const favorites = await AsyncStorage.getItem('@mwmbl_favorites');
+        if (favorites) {
+          const parsed = JSON.parse(favorites);
+          const fav = parsed.find((f: any) => f.url === activeTab.url);
+          if (fav) {
+            await removeFavorite(fav.id);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          }
+        }
+      } else {
+        await addFavorite(activeTab.url, activeTab.title);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
     }
   };
@@ -143,15 +167,31 @@ export default function BrowserScreen() {
           </ThemedText>
         </View>
 
-        <Pressable
-          onPress={handleShare}
-          style={({ pressed }) => [
-            styles.iconButton,
-            { opacity: pressed ? 0.5 : 1 },
-          ]}
-        >
-          <Ionicons name="share-outline" size={24} color={colors.text} />
-        </Pressable>
+        <View style={styles.headerActions}>
+          <Pressable
+            onPress={handleToggleFavorite}
+            style={({ pressed }) => [
+              styles.iconButton,
+              { opacity: pressed ? 0.5 : 1 },
+            ]}
+          >
+            <Ionicons 
+              name={activeTab && isFavorite(activeTab.url) ? "star" : "star-outline"} 
+              size={24} 
+              color={activeTab && isFavorite(activeTab.url) ? colors.tint : colors.text} 
+            />
+          </Pressable>
+
+          <Pressable
+            onPress={handleShare}
+            style={({ pressed }) => [
+              styles.iconButton,
+              { opacity: pressed ? 0.5 : 1 },
+            ]}
+          >
+            <Ionicons name="share-outline" size={24} color={colors.text} />
+          </Pressable>
+        </View>
       </View>
 
       {/* WebViews Container */}
@@ -363,6 +403,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
     opacity: 0.6,
     marginTop: 2,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    gap: 8,
   },
   webviewContainer: {
     flex: 1,

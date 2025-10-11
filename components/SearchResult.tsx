@@ -21,7 +21,7 @@ export default function SearchResult({ title, url, extract }: SearchResultProps)
   const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     
-    // If no tabs exist, create first tab, otherwise navigate to existing browser
+    // Create tab and navigate
     if (tabs.length === 0) {
       router.push({
         pathname: '/browser',

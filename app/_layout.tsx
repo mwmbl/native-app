@@ -7,6 +7,7 @@ import 'react-native-reanimated';
 import { ThemeProvider } from '@/hooks/use-theme-context';
 import { AuthProvider } from '@/hooks/use-auth-context';
 import { TabsProvider } from '@/hooks/use-tabs-context';
+import { FavoritesProvider } from '@/hooks/use-favorites-context';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
 function RootNavigator() {
@@ -29,9 +30,11 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider>
         <AuthProvider>
-          <TabsProvider>
-            <RootNavigator />
-          </TabsProvider>
+          <FavoritesProvider>
+            <TabsProvider>
+              <RootNavigator />
+            </TabsProvider>
+          </FavoritesProvider>
         </AuthProvider>
       </ThemeProvider>
     </GestureHandlerRootView>
