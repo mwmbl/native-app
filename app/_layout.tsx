@@ -37,6 +37,14 @@ function RootNavigator() {
             drawerItemStyle: { display: 'none' },
           }}
         />
+        <Drawer.Screen
+          name="browser"
+          options={{
+            drawerLabel: 'Browser',
+            title: 'Browser',
+            drawerItemStyle: { display: 'none' },
+          }}
+        />
       </Drawer>
       <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
     </NavigationThemeProvider>

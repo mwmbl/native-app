@@ -1,4 +1,5 @@
-import { StyleSheet, Pressable, Linking, View } from 'react-native';
+import { StyleSheet, Pressable, View } from 'react-native';
+import { useRouter } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors } from '@/constants/theme';
@@ -13,14 +14,14 @@ interface SearchResultProps {
 export default function SearchResult({ title, url, extract }: SearchResultProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const router = useRouter();
 
-  const handlePress = async () => {
+  const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    try {
-      await Linking.openURL(url);
-    } catch (error) {
-      console.error('Error opening URL:', error);
-    }
+    router.push({
+      pathname: '/browser',
+      params: { url, title },
+    });
   };
 
   // Extract domain from URL
