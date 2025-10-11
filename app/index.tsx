@@ -1,13 +1,17 @@
 import { useState, useCallback } from 'react';
-import { StyleSheet, View, FlatList, KeyboardAvoidingView, Platform } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { StyleSheet, View, FlatList, KeyboardAvoidingView, Platform, Pressable } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { DrawerNavigationProp } from '@react-navigation/drawer';
 import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
 import SearchBar from '@/components/SearchBar';
 import SearchResult from '@/components/SearchResult';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors } from '@/constants/theme';
+import * as Haptics from 'expo-haptics';
 
 interface SearchResultType {
   title: string;
@@ -17,9 +21,22 @@ interface SearchResultType {
 
 export default function SearchScreen() {
   const colorScheme = useColorScheme();
+  const navigation = useNavigation<DrawerNavigationProp<any>>();
+  const insets = useSafeAreaInsets();
   const [searchQuery, setSearchQuery] = useState('');
   const [results, setResults] = useState<SearchResultType[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+
+  const handleOpenDrawer = () => {
+    console.log('Menu button pressed, opening drawer...');
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    try {
+      navigation.openDrawer();
+      console.log('Drawer opened successfully');
+    } catch (error) {
+      console.error('Error opening drawer:', error);
+    }
+  };
 
   const handleSearch = useCallback(async (query: string) => {
     if (!query.trim()) {
@@ -60,6 +77,21 @@ export default function SearchScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: Colors[colorScheme ?? 'light'].background }]}>
+      {/* Menu Button */}
+      <Pressable
+        onPress={handleOpenDrawer}
+        style={({ pressed }) => [
+          styles.menuButton,
+          {
+            top: insets.top + 8,
+            backgroundColor: colorScheme === 'dark' ? '#2C2C2E' : '#F2F2F7',
+            opacity: pressed ? 0.7 : 1,
+          },
+        ]}
+      >
+        <Ionicons name="menu" size={24} color={Colors[colorScheme ?? 'light'].text} />
+      </Pressable>
+
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
@@ -145,6 +177,21 @@ const styles = StyleSheet.create({
   },
   keyboardView: {
     flex: 1,
+  },
+  menuButton: {
+    position: 'absolute',
+    left: 16,
+    zIndex: 1000,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5,
   },
   centeredContent: {
     flex: 1,
