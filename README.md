@@ -1,50 +1,127 @@
-# Welcome to your Expo app 👋
+![banner](docs/assets/images/banner_mwmbl.svg)
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+# MWMBL the Open Source Web Search Engine React Native Mobile App
 
-## Get started
+> ⚠️ **NOTE:** This repository is under heavy construction. Features and documentation are actively being developed and may change frequently.
 
-1. Install dependencies
+A simple, single-view mobile search interface for [mwmbl.org](https://mwmbl.org) - a non-profit, ad-free search engine.
 
-   ```bash
-   npm install
-   ```
+## Project Structure
 
-2. Start the app
+### Single-View Architecture
 
-   ```bash
-   npx expo start
-   ```
+This app uses **Expo Router** with a simplified single-view structure (no tabs):
 
-In the output, you'll find options to open the app in a
+```
+app/
+├── _layout.tsx        # Root layout with theme provider
+└── index.tsx          # Main search screen
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+components/
+├── SearchBar.tsx      # Search input with loading state
+├── SearchResult.tsx   # Individual search result card
+├── themed-view.tsx    # Theme-aware view component
+└── themed-text.tsx    # Theme-aware text component
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Features
 
-## Learn more
+- ✅ **Single unified search view** - No tab navigation, just search
+- ✅ **Dark mode support** - Automatic theme switching
+- ✅ **Haptic feedback** - Touch feedback on iOS
+- ✅ **Live search** - Results update as you type
+- ✅ **Clean UI** - Modern, minimalist design
+- ✅ **External link handling** - Opens results in default browser
 
-To learn more about developing your project with Expo, look at the following resources:
+## Running the App
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+### Development
 
-## Join the community
+```bash
+# Install dependencies
+npm install
 
-Join our community of developers creating universal apps.
+# Start development server
+npm start
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+# Run on iOS simulator
+npm run ios
+
+# Run on Android emulator  
+npm run android
+```
+
+### With Expo Go
+
+1. Install **Expo Go** on your iOS/Android device
+2. Run `npm start`
+3. Scan the QR code with your device camera (iOS) or Expo Go app (Android)
+
+## Configuration
+
+### Important Settings
+
+- **New Architecture**: Disabled (`newArchEnabled: false` in app.json)
+  - Expo Go doesn't fully support Fabric renderer yet
+  - For production, consider creating a development build with `eas build`
+
+### API Integration
+
+The search functionality in `app/index.tsx` currently points to:
+```typescript
+const response = await fetch(`https://mwmbl.org/app/search?q=${encodeURIComponent(query)}`);
+```
+
+Update this endpoint based on the actual mwmbl API structure.
+
+## Dependencies
+
+### Core
+- `expo` ~54.0.13
+- `expo-router` ~6.0.11
+- `react-native` 0.81.4
+
+### UI/UX
+- `@expo/vector-icons` - Icon library
+- `expo-haptics` - Touch feedback
+- `expo-image` - Optimized image component
+- `react-native-safe-area-context` - Safe area handling
+
+### Navigation
+- `@react-navigation/native` - Navigation library (used by Expo Router)
+
+## Troubleshooting
+
+### Crash on Launch in Expo Go
+
+If the app crashes immediately in Expo Go:
+1. Ensure `newArchEnabled` is set to `false` in `app.json`
+2. Clear Expo cache: `npx expo start --clear`
+3. Shake device and reload in Expo Go
+
+### Building for Production
+
+For a production build with New Architecture support:
+
+```bash
+# Install EAS CLI
+npm install -g eas-cli
+
+# Build for iOS
+eas build --profile production --platform ios
+
+# Build for Android
+eas build --profile production --platform android
+```
+
+## Design Philosophy
+
+This app follows a **single-purpose design** philosophy:
+- One screen, one goal: Search
+- No distractions or unnecessary navigation
+- Fast, responsive, and straightforward
+
+## License
+
+Check the main mwmbl repository for licensing information.
+
