@@ -1,19 +1,19 @@
-import { useState, useCallback, useRef } from 'react';
-import { StyleSheet, View, FlatList, KeyboardAvoidingView, Platform, Pressable, ScrollView, Modal, TextInput, ActivityIndicator } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Image } from 'expo-image';
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter, useFocusEffect } from 'expo-router';
-import { ThemedView } from '@/components/themed-view';
-import { ThemedText } from '@/components/themed-text';
 import SearchResult from '@/components/SearchResult';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { useAuth } from '@/hooks/use-auth-context';
-import { useTheme } from '@/hooks/use-theme-context';
-import { useTabs } from '@/hooks/use-tabs-context';
-import { useFavorites } from '@/hooks/use-favorites-context';
+import { ThemedText } from '@/components/themed-text';
+import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/theme';
+import { useAuth } from '@/hooks/use-auth-context';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useFavorites } from '@/hooks/use-favorites-context';
+import { useTabs } from '@/hooks/use-tabs-context';
+import { useTheme } from '@/hooks/use-theme-context';
+import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { Image } from 'expo-image';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useRef, useState } from 'react';
+import { ActivityIndicator, FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface SearchResultType {
   title: string;
@@ -47,19 +47,44 @@ export default function SearchScreen() {
   );
 
   const handleOpenTab = (tabId: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    
+    // On web, open tab URL in new browser tab
+    if (Platform.OS === 'web') {
+      const tab = tabs.find(t => t.id === tabId);
+      if (tab && typeof window !== 'undefined') {
+        window.open(tab.url, '_blank');
+      }
+      return;
+    }
+    
     switchTab(tabId);
     router.push('/browser');
   };
 
   const handleCloseTab = (tabId: string, e?: any) => {
     e?.stopPropagation();
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
     closeTab(tabId);
   };
 
   const handleOpenFavorite = (url: string, title: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    
+    // On web, open in new tab using native browser
+    if (Platform.OS === 'web') {
+      if (typeof window !== 'undefined') {
+        window.open(url, '_blank');
+      }
+      return;
+    }
+    
     if (tabs.length === 0) {
       router.push({
         pathname: '/browser',
@@ -74,7 +99,9 @@ export default function SearchScreen() {
 
   const handleRemoveFavorite = (id: string, e?: any) => {
     e?.stopPropagation();
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
     removeFavorite(id);
   };
 
@@ -123,24 +150,32 @@ export default function SearchScreen() {
   };
 
   const handleLogin = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
     setShowMenu(false);
     router.push('/login');
   };
 
   const handleLogout = async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
     await logout();
     setShowMenu(false);
   };
 
   const handleThemeChange = (mode: 'light' | 'dark' | 'system') => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
     setThemeMode(mode);
   };
 
   const handleShowTabsAndFavorites = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
     // Clear search to show favorites and tabs
     setSearchQuery('');
     setResults([]);
@@ -284,19 +319,21 @@ export default function SearchScreen() {
             )}
           </ScrollView>
         ) : (
-          <FlatList
-            data={results}
-            keyExtractor={(item, index) => `${item.url}-${index}`}
-            renderItem={({ item }) => (
-              <SearchResult
-                title={item.title}
-                url={item.url}
-                extract={item.extract}
-              />
-            )}
-            contentContainerStyle={styles.resultsList}
-            showsVerticalScrollIndicator={false}
-          />
+          <View style={styles.resultsWrapper}>
+            <FlatList
+              data={results}
+              keyExtractor={(item, index) => `${item.url}-${index}`}
+              renderItem={({ item }) => (
+                <SearchResult
+                  title={item.title}
+                  url={item.url}
+                  extract={item.extract}
+                />
+              )}
+              contentContainerStyle={styles.resultsList}
+              showsVerticalScrollIndicator={false}
+            />
+          </View>
         )}
 
         {/* Bottom Search Bar */}
@@ -305,54 +342,56 @@ export default function SearchScreen() {
           borderTopColor: colorScheme === 'dark' ? '#2C2C2E' : '#E5E5EA',
           paddingBottom: insets.bottom || 8,
         }]}>
-          <Pressable
-            onPress={() => setShowMenu(true)}
-            style={({ pressed }) => [
-              styles.menuIconButton,
-              { opacity: pressed ? 0.5 : 1 },
-            ]}
-          >
-            <Ionicons name="ellipsis-horizontal-circle" size={28} color={colors.tint} />
-          </Pressable>
-
-          <View style={[styles.searchInputContainer, {
-            backgroundColor: colorScheme === 'dark' ? '#2C2C2E' : '#fff',
-          }]}>
-            <Ionicons name="search" size={18} color={colors.icon} style={styles.searchIcon} />
-            <TextInput
-              style={[styles.searchInput, { color: colors.text }]}
-              placeholder="Search or enter website"
-              placeholderTextColor={colors.icon}
-              value={searchQuery}
-              onChangeText={handleQueryChange}
-              onSubmitEditing={() => handleSearch(searchQuery)}
-              returnKeyType="search"
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-            {isLoading ? (
-              <ActivityIndicator size="small" color={colors.tint} style={styles.inputIcon} />
-            ) : searchQuery ? (
-              <Pressable onPress={() => setSearchQuery('')} style={styles.inputIcon}>
-                <Ionicons name="close-circle" size={18} color={colors.icon} />
-              </Pressable>
-            ) : null}
-          </View>
-
-          {(tabs.length > 0 || favorites.length > 0) && (
+          <View style={styles.searchBarContent}>
             <Pressable
-              onPress={handleShowTabsAndFavorites}
+              onPress={() => setShowMenu(true)}
               style={({ pressed }) => [
-                styles.tabCountButton,
-                {
-                  borderColor: colors.text,
-                  opacity: pressed ? 0.5 : 1,
-                },
+                styles.menuIconButton,
+                { opacity: pressed ? 0.5 : 1 },
               ]}
             >
-              <Ionicons name="albums-outline" size={18} color={colors.text} />
+              <Ionicons name="ellipsis-horizontal-circle" size={28} color={colors.tint} />
             </Pressable>
-          )}
+
+            <View style={[styles.searchInputContainer, {
+              backgroundColor: colorScheme === 'dark' ? '#2C2C2E' : '#fff',
+            }]}>
+              <Ionicons name="search" size={18} color={colors.icon} style={styles.searchIcon} />
+              <TextInput
+                style={[styles.searchInput, { color: colors.text }]}
+                placeholder="Search or enter website"
+                placeholderTextColor={colors.icon}
+                value={searchQuery}
+                onChangeText={handleQueryChange}
+                onSubmitEditing={() => handleSearch(searchQuery)}
+                returnKeyType="search"
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+              {isLoading ? (
+                <ActivityIndicator size="small" color={colors.tint} style={styles.inputIcon} />
+              ) : searchQuery ? (
+                <Pressable onPress={() => setSearchQuery('')} style={styles.inputIcon}>
+                  <Ionicons name="close-circle" size={18} color={colors.icon} />
+                </Pressable>
+              ) : null}
+            </View>
+
+            {(tabs.length > 0 || favorites.length > 0) && (
+              <Pressable
+                onPress={handleShowTabsAndFavorites}
+                style={({ pressed }) => [
+                  styles.tabCountButton,
+                  {
+                    borderColor: colors.text,
+                    opacity: pressed ? 0.5 : 1,
+                  },
+                ]}
+              >
+                <Ionicons name="albums-outline" size={18} color={colors.text} />
+              </Pressable>
+            )}
+          </View>
         </View>
       </KeyboardAvoidingView>
 
@@ -367,19 +406,20 @@ export default function SearchScreen() {
           style={styles.modalOverlay}
           onPress={() => setShowMenu(false)}
         >
-          <Pressable 
-            style={[styles.menuModal, {
-              backgroundColor: colorScheme === 'dark' ? '#1C1C1E' : '#fff',
-            }]}
-            onPress={(e) => e.stopPropagation()}
-          >
-            {/* User Section */}
-            {isAuthenticated ? (
-              <View style={styles.menuSection}>
-                <View style={[styles.menuItem, { backgroundColor: colorScheme === 'dark' ? '#2C2C2E' : '#F2F2F7' }]}>
-                  <Ionicons name="person" size={24} color={colors.tint} />
-                  <ThemedText style={[styles.menuItemText, { color: colors.tint }]}>{username}</ThemedText>
-                </View>
+          <View style={styles.menuModalWrapper}>
+            <Pressable 
+              style={[styles.menuModal, {
+                backgroundColor: colorScheme === 'dark' ? '#1C1C1E' : '#fff',
+              }]}
+              onPress={(e) => e.stopPropagation()}
+            >
+              {/* User Section */}
+              {isAuthenticated ? (
+                <View style={styles.menuSection}>
+                  <View style={[styles.menuItem, { backgroundColor: colorScheme === 'dark' ? '#2C2C2E' : '#F2F2F7' }]}>
+                    <Ionicons name="person" size={24} color={colors.tint} />
+                    <ThemedText style={[styles.menuItemText, { color: colors.text, fontWeight: '600' }]}>{username}</ThemedText>
+                  </View>
                 <Pressable
                   onPress={handleLogout}
                   style={({ pressed }) => [
@@ -450,20 +490,21 @@ export default function SearchScreen() {
               </Pressable>
             </View>
 
-            {/* Cancel Button */}
-            <Pressable
-              onPress={() => setShowMenu(false)}
-              style={({ pressed }) => [
-                styles.cancelButton,
-                {
-                  backgroundColor: colorScheme === 'dark' ? '#2C2C2E' : '#F2F2F7',
-                  opacity: pressed ? 0.7 : 1,
-                },
-              ]}
-            >
-              <ThemedText style={styles.cancelButtonText}>Cancel</ThemedText>
+              {/* Cancel Button */}
+              <Pressable
+                onPress={() => setShowMenu(false)}
+                style={({ pressed }) => [
+                  styles.cancelButton,
+                  {
+                    backgroundColor: colorScheme === 'dark' ? '#2C2C2E' : '#F2F2F7',
+                    opacity: pressed ? 0.7 : 1,
+                  },
+                ]}
+              >
+                <ThemedText style={styles.cancelButtonText}>Cancel</ThemedText>
+              </Pressable>
             </Pressable>
-          </Pressable>
+          </View>
         </Pressable>
       </Modal>
     </SafeAreaView>
@@ -589,17 +630,29 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     opacity: 0.6,
   },
+  resultsWrapper: {
+    flex: 1,
+    alignSelf: 'center',
+    width: '100%',
+    maxWidth: Platform.OS === 'web' ? 800 : undefined,
+  },
   resultsList: {
     padding: 16,
     paddingBottom: 100,
   },
   bottomSearchBar: {
-    flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingTop: 8,
     borderTopWidth: 1,
+  },
+  searchBarContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 8,
+    width: '100%',
+    maxWidth: Platform.OS === 'web' ? 800 : undefined,
+    alignSelf: 'center',
   },
   menuIconButton: {
     padding: 4,
@@ -619,6 +672,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     paddingVertical: 8,
+    paddingLeft: 4,
   },
   inputIcon: {
     padding: 4,
@@ -639,6 +693,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.4)',
     justifyContent: 'flex-end',
+    alignItems: 'center',
+  },
+  menuModalWrapper: {
+    width: '100%',
+    maxWidth: Platform.OS === 'web' ? 800 : undefined,
+    alignSelf: 'center',
   },
   menuModal: {
     borderTopLeftRadius: 20,

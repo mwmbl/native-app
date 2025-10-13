@@ -1,10 +1,10 @@
-import { StyleSheet, Pressable, View } from 'react-native';
-import { useRouter } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
+import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useTabs } from '@/hooks/use-tabs-context';
-import { Colors } from '@/constants/theme';
 import * as Haptics from 'expo-haptics';
+import { useRouter } from 'expo-router';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
 
 interface SearchResultProps {
   title: string;
@@ -19,9 +19,19 @@ export default function SearchResult({ title, url, extract }: SearchResultProps)
   const { createTab, tabs } = useTabs();
 
   const handlePress = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
     
-    // Create tab and navigate
+    // On web, open in new tab using native browser
+    if (Platform.OS === 'web') {
+      if (typeof window !== 'undefined') {
+        window.open(url, '_blank');
+      }
+      return;
+    }
+    
+    // On mobile, create tab and navigate
     if (tabs.length === 0) {
       router.push({
         pathname: '/browser',
@@ -50,7 +60,7 @@ export default function SearchResult({ title, url, extract }: SearchResultProps)
         styles.container,
         { 
           backgroundColor: colorScheme === 'dark' ? '#1C1C1E' : '#F9F9F9',
-          borderColor: colors.tint,
+          borderColor: colorScheme === 'dark' ? '#3A3A3C' : '#E5E5EA',
           opacity: pressed ? 0.7 : 1,
         }
       ]}

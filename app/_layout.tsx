@@ -1,17 +1,27 @@
 import { DarkTheme, DefaultTheme, ThemeProvider as NavigationThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useEffect } from 'react';
+import { Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
 
-import { ThemeProvider } from '@/hooks/use-theme-context';
 import { AuthProvider } from '@/hooks/use-auth-context';
-import { TabsProvider } from '@/hooks/use-tabs-context';
-import { FavoritesProvider } from '@/hooks/use-favorites-context';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { FavoritesProvider } from '@/hooks/use-favorites-context';
+import { TabsProvider } from '@/hooks/use-tabs-context';
+import { ThemeProvider } from '@/hooks/use-theme-context';
 
 function RootNavigator() {
   const colorScheme = useColorScheme();
+
+  // Update document color scheme on web
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      document.documentElement.style.colorScheme = colorScheme;
+      document.documentElement.setAttribute('data-theme', colorScheme);
+    }
+  }, [colorScheme]);
 
   return (
     <NavigationThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
