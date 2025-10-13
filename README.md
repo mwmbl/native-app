@@ -4,6 +4,13 @@
 
 > ⚠️ **NOTE:** This repository is under heavy construction. Features and documentation are actively being developed and may change frequently.
 
+
+<p align="center">
+  <img src="docs/assets/images/iphone.png" width="30%" />
+  <img src="docs/assets/images/nasa.png" width="30%" />
+  <img src="docs/assets/images/tabs.png" width="30%" />
+</p>
+
 A simple, single-view mobile search interface for [mwmbl.org](https://mwmbl.org) - a non-profit, ad-free search engine.
 
 ## Project Structure
