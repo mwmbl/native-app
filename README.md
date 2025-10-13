@@ -121,7 +121,4 @@ This app follows a **single-purpose design** philosophy:
 - No distractions or unnecessary navigation
 - Fast, responsive, and straightforward
 
-## License
-
-Check the main mwmbl repository for licensing information.
 
