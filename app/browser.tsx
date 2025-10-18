@@ -1,16 +1,17 @@
-import { useState, useRef, useEffect } from 'react';
-import { StyleSheet, View, Pressable, ActivityIndicator, Share, ScrollView, Modal, Dimensions } from 'react-native';
+import { ThemedText } from '@/components/themed-text';
+import { Colors } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useFavorites } from '@/hooks/use-favorites-context';
+import { useTabs } from '@/hooks/use-tabs-context';
+import { getDomain } from '@/utils/url';
+import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Haptics from 'expo-haptics';
+import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
+import { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Dimensions, Modal, Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
-import { Ionicons } from '@expo/vector-icons';
-import { useNavigation, useLocalSearchParams, useRouter } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ThemedText } from '@/components/themed-text';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { useTabs } from '@/hooks/use-tabs-context';
-import { useFavorites } from '@/hooks/use-favorites-context';
-import { Colors } from '@/constants/theme';
-import * as Haptics from 'expo-haptics';
 
 const { width } = Dimensions.get('window');
 
@@ -129,15 +130,6 @@ export default function BrowserScreen() {
   const handleToggleTabSwitcher = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setShowTabSwitcher(!showTabSwitcher);
-  };
-
-  const getDomain = (url: string) => {
-    try {
-      const urlObj = new URL(url);
-      return urlObj.hostname.replace('www.', '');
-    } catch {
-      return url;
-    }
   };
 
   if (tabs.length === 0) {

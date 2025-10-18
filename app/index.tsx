@@ -7,6 +7,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useFavorites } from '@/hooks/use-favorites-context';
 import { useTabs } from '@/hooks/use-tabs-context';
 import { useTheme } from '@/hooks/use-theme-context';
+import { getDomain, isValidUrl } from '@/utils/url';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
@@ -105,18 +106,45 @@ export default function SearchScreen() {
     removeFavorite(id);
   };
 
-  const getDomain = (url: string) => {
-    try {
-      const urlObj = new URL(url);
-      return urlObj.hostname.replace('www.', '');
-    } catch {
-      return url;
+  const handleOpenUrl = useCallback((url: string) => {
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-  };
+    
+    // On web, open in new tab using native browser
+    if (Platform.OS === 'web') {
+      if (typeof window !== 'undefined') {
+        window.open(url, '_blank');
+      }
+      return;
+    }
+    
+    // On mobile, create tab and navigate
+    if (tabs.length === 0) {
+      router.push({
+        pathname: '/browser',
+        params: { url, title: getDomain(url) },
+      });
+    } else {
+      createTab(url, getDomain(url));
+      router.push('/browser');
+    }
+    
+    // Clear search after opening URL
+    setSearchQuery('');
+    setResults([]);
+  }, [tabs.length, router, createTab]);
 
   const handleSearch = useCallback(async (query: string) => {
     if (!query.trim()) {
       setResults([]);
+      return;
+    }
+
+    // Check if the query is a URL
+    const validUrl = isValidUrl(query);
+    if (validUrl) {
+      handleOpenUrl(validUrl);
       return;
     }
 
@@ -138,13 +166,16 @@ export default function SearchScreen() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [handleOpenUrl]);
 
   const handleQueryChange = (text: string) => {
     setSearchQuery(text);
-    if (text.trim()) {
+    // Don't auto-search URLs, only regular text
+    // URLs should only open when user submits
+    const validUrl = isValidUrl(text);
+    if (text.trim() && !validUrl) {
       handleSearch(text);
-    } else {
+    } else if (!text.trim()) {
       setResults([]);
     }
   };

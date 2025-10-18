@@ -2,6 +2,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useTabs } from '@/hooks/use-tabs-context';
+import { getDomain } from '@/utils/url';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
@@ -40,16 +41,6 @@ export default function SearchResult({ title, url, extract }: SearchResultProps)
     } else {
       createTab(url, title);
       router.push('/browser');
-    }
-  };
-
-  // Extract domain from URL
-  const getDomain = (url: string) => {
-    try {
-      const urlObj = new URL(url);
-      return urlObj.hostname.replace('www.', '');
-    } catch {
-      return url;
     }
   };
 
