@@ -1,5 +1,6 @@
 import { ThemedText } from '@/components/themed-text';
 import { Colors } from '@/constants/theme';
+import { useAdBlocker } from '@/hooks/use-ad-blocker';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useFavorites } from '@/hooks/use-favorites-context';
 import { useTabs } from '@/hooks/use-tabs-context';
@@ -23,6 +24,7 @@ export default function BrowserScreen() {
   const params = useLocalSearchParams();
   const { tabs, activeTab, createTab, closeTab, switchTab, updateTab, closeAllTabs } = useTabs();
   const { addFavorite, removeFavorite, isFavorite } = useFavorites();
+  const { shouldBlockRequest } = useAdBlocker();
 
   const url = typeof params.url === 'string' ? params.url : '';
   const title = typeof params.title === 'string' ? params.title : '';
@@ -197,7 +199,9 @@ export default function BrowserScreen() {
             ]}
           >
             <WebView
-              ref={(ref) => (webViewRefs.current[tab.id] = ref)}
+              ref={(ref) => {
+                webViewRefs.current[tab.id] = ref;
+              }}
               source={{ uri: tab.url }}
               style={styles.webview}
               onLoadStart={() => setIsLoading((prev) => ({ ...prev, [tab.id]: true }))}
@@ -209,6 +213,13 @@ export default function BrowserScreen() {
                   url: navState.url,
                   title: navState.title,
                 });
+              }}
+              onShouldStartLoadWithRequest={(request) => {
+                const blocked = shouldBlockRequest(request.url);
+                if (blocked) {
+                  console.log('[Ad Blocker] Blocked:', request.url);
+                }
+                return !blocked;
               }}
               allowsBackForwardNavigationGestures
               startInLoadingState
